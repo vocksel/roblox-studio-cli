@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact-name: roblox-studio-cli-windows-x86_64
+            cargo-target: x86_64-pc-windows-msvc
+          - os: ubuntu-18.04
+            artifact-name: roblox-studio-cli-linux-x86_64
+            cargo-target: x86_64-unknown-linux-gnu
+          - os: ubuntu-18.04
+            artifact-name: roblox-studio-cli-linux-aarch64
+            cargo-target: aarch64-unknown-linux-gnu
+            linker: gcc-aarch64-linux-gnu
+          - os: macos-latest
+            artifact-name: roblox-studio-cli-macos-x86_64
+            cargo-target: x86_64-apple-darwin
+          - os: macos-latest
+            artifact-name: roblox-studio-cli-macos-aarch64
+            cargo-target: aarch64-apple-darwin
+    name: build (${{ matrix.artifact-name }})
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.cargo-target }}
+
+      - name: Install Linker packages
+        if: ${{ matrix.linker != '' }}
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install ${{ matrix.linker }}
+
+      - name: Build Binary (All features)
+        shell: bash
+        run: cargo build --verbose --locked --release --target ${{ matrix.cargo-target }}
+        env:
+          CARGO_TARGET_DIR: output
+
+      - name: Setup Archive + Extension
+        shell: bash
+        run: |
+          mkdir -p staging
+
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp "output/${{ matrix.cargo-target }}/release/roblox-studio-cli.exe" staging/
+            cd staging
+            7z a ../release.zip *
+          else
+            cp "output/${{ matrix.cargo-target }}/release/roblox-studio-cli" staging/
+            cd staging
+            zip ../release.zip *
+          fi
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: release.zip
+
+
+  tests:
+    needs: ['build']
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: Roblox/setup-foreman@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/checkout@v3
+        with:
+          repository: vocksel/flipbook
+          path: example
+
+      - name: Navigate into the example project
+        shell: bash
+        run: cd example
+
+      - name: Install dependencies
+        shell: bash
+        run: wally install
+
+      - name: Build place file
+        shell: bash
+        run: rojo build dev.project.json -o studio-tests.rbxl
+
+      - name: Download roblox-studio-cli
+        uses: actions/download-artifact@v3
+        with:
+          name: roblox-studio-cli-windows-x86_64
+          path: roblox-studio-cli
+
+      - name: Install Roblox Studio
+        shell: bash
+        run: roblox-studio-cli install
+        working-directory: roblox-studio-cli
+
+      - name: Set auth token
+        shell: bash
+        run: roblox-studio-cli auth-token set ${{ secrets.ROBLOSECURITY }}
+        working-directory: roblox-studio-cli
+
+      - name: Run tests
+        run: run-in-roblox --place studio-tests.rbxl --script tests/init.server.lua
