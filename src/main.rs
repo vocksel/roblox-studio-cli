@@ -12,21 +12,26 @@ enum AuthToken {
 enum Install {}
 
 #[derive(Subcommand, Debug)]
-enum AuthTokenCommands {
+enum AuthCommands {
     // Gets the Roblox Studio authentication token for the current user. Rolox
     // Studio needs to have been logged in to at least once for this to return
     // anything
-    Get {},
+    Get {
+        token_name: String,
+    },
 
     // Sets the authentication token to use when logging into Roblox Studio.
     // This should be an active .ROBLOSECURITY cookie
-    Set { token: String },
+    Set {
+        token_name: String,
+        token_value: String,
+    },
 }
 
 #[derive(Args, Debug)]
-struct AuthTokenArgs {
+struct AuthArgs {
     #[command(subcommand)]
-    command: AuthTokenCommands,
+    command: AuthCommands,
 }
 
 #[derive(Subcommand, Debug)]
@@ -35,7 +40,7 @@ enum Commands {
     Install {},
 
     // Manage authentication credentials for Roblox Studio
-    AuthToken(AuthTokenArgs),
+    Auth(AuthArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -43,7 +48,7 @@ enum Commands {
 #[command(propagate_version = true)]
 struct Program {
     #[command(subcommand)]
-    command: Option<Commands>,
+    command: Commands,
 }
 
 fn main() {
@@ -53,27 +58,25 @@ fn main() {
         Commands::Install {} => {
             println!("Install Roblox Studio");
         }
-        Commands::AuthToken(args) => match args.command {
-            Get {} => {}
-            Set {} => {}
+        Commands::Auth(args) => match args.command {
+            AuthCommands::Get { token_name } => {
+                let credential = studio::get_auth_credential(token_name.as_str());
+
+                match credential {
+                    Ok(credential) => {
+                        println!("{:?}", credential.as_str());
+                    }
+                    Err(err) => {
+                        println!("{:?}", err)
+                    }
+                }
+            }
+            AuthCommands::Set {
+                token_name,
+                token_value,
+            } => {
+                studio::set_auth_credential(token_name.as_str(), token_value.as_str()).ok();
+            }
         },
     }
-
-    // let roblosecurity = StudioCredential {
-    //     name: ".ROBLOSECURITY",
-    //     value :""
-    // };
-
-    // let rbxidcheck = StudioCredential {
-    //     name: ".RBXIDCHECK",
-    //     value: "",
-    // };
-
-    // studio::set_auth_credential(roblosecurity.name, roblosecurity.value).ok();
-    // // studio::set_auth_credential(rbxidcheck.name, rbxidcheck.value).ok();
-    // studio::set_auth_credential(
-    //     "Cookies",
-    //     &format!("{};{};", roblosecurity.name, rbxidcheck.name),
-    // )
-    // .ok();
 }
