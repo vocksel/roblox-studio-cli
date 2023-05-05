@@ -54,6 +54,8 @@ jobs:
         run: |
           mkdir -p staging
 
+          ls -al output
+
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             cp "output/${{ matrix.cargo-target }}/release/roblox-studio-cli.exe" staging/
             cd staging
