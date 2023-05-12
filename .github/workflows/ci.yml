@@ -125,3 +125,4 @@ jobs:
 
       - name: Run tests
         run: run-in-roblox --place studio-tests.rbxl --script tests/init.server.lua
+        working-directory: example
