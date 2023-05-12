@@ -109,9 +109,12 @@ jobs:
         run: roblox-studio-cli install
         working-directory: roblox-studio-cli
 
-      - name: Set auth token
+      - name: Set auth credentials
         shell: bash
-        run: roblox-studio-cli auth-token set ${{ secrets.ROBLOSECURITY }}
+        run: |
+          roblox-studio-cli auth set .ROBLOSECURITY "${{ secrets.ROBLOSECURITY }}"
+          roblox-studio-cli auth set oauth2RefreshToken "${{ secrets.ROBLOX_REFRESH_TOKEN }}"
+          roblox-studio-cli auth set userid "${{ secrets.ROBLOX_USER_ID }}"
         working-directory: roblox-studio-cli
 
       - name: Run tests
