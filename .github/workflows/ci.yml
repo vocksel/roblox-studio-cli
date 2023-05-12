@@ -86,17 +86,15 @@ jobs:
           repository: vocksel/flipbook
           path: example
 
-      - name: Navigate into the example project
-        shell: bash
-        run: cd example
-
       - name: Install dependencies
         shell: bash
         run: wally install
+        working-directory: example
 
       - name: Build place file
         shell: bash
         run: rojo build dev.project.json -o studio-tests.rbxl
+        working-directory: example
 
       - name: Download roblox-studio-cli
         uses: actions/download-artifact@v3
