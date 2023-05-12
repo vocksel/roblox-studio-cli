@@ -105,9 +105,17 @@ jobs:
           path: roblox-studio-cli
 
       - name: Install Roblox Studio
-        shell: bash
-        run: roblox-studio-cli install
-        working-directory: roblox-studio-cli
+        run:
+          Invoke-WebRequest -Uri "https://github.com/OrbitalOwen/roblox-win-installer/archive/0.5.zip" -OutFile roblox-win-installer.zip;
+          Expand-Archive -LiteralPath roblox-win-installer.zip -DestinationPath .;
+          cd roblox-win-installer-0.5;
+          pip install --requirement requirements.txt;
+          python install.py "${{ secrets.ROBLOSECURITY }}"
+
+      # - name: Install Roblox Studio
+      #   shell: bash
+      #   run: roblox-studio-cli install
+      #   working-directory: roblox-studio-cli
 
       - name: Set auth credentials
         shell: bash
