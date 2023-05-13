@@ -49,12 +49,25 @@ jobs:
         env:
           CARGO_TARGET_DIR: output
 
+      - name: Setup archive + extension
+        shell: bash
+        run: |
+          mkdir -p staging
+
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp "output/${{ matrix.cargo-target }}/release/roblox-studio-cli.exe" staging/
+            cd staging
+            7z a ../release.zip *
+          else
+            cp "output/${{ matrix.cargo-target }}/release/roblox-studio-cli" staging/
+            cd staging
+            zip ../release.zip *
+          fi
+
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.artifact-name }}
-          path: |
-            **/roblox-studio-cli
-            **/roblox-studio-cli.exe
+          path: release/roblox-studio-cli*
 
   tests:
     needs: ['build']
