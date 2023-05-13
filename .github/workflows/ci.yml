@@ -67,7 +67,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.artifact-name }}
-          path: release/roblox-studio-cli*
+          path: release.zip
 
   tests:
     needs: ['build']
