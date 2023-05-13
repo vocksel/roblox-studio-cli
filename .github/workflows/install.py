@@ -40,7 +40,7 @@ def downloadStudioLauncher():
     launcherPath = os.path.join(sys.path[0], 'RobloxStudioLauncherBeta.exe')
     url = 'http://setup.roblox.com/RobloxStudioLauncherBeta.exe'
     wget.download(url, launcherPath)
-    log('Downloaded Studio launcher to ${launcherPath}')
+    log(f'Downloaded Studio launcher to ${launcherPath}')
     return launcherPath
 
 
@@ -56,7 +56,7 @@ def installStudio(launcherPath):
         # When RobloxStudioBeta.exe is running, the installer has completed
         path = getProcessPath('RobloxStudioBeta.exe')
         if path:
-            print('Installed Studio to ${path}')
+            log(f'Installed Studio to ${path}')
             return path
         time.sleep(1)
 
