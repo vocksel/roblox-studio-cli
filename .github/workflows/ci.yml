@@ -85,6 +85,7 @@ jobs:
       - name: Set auth credentials
         shell: bash
         run: |
+          7z x release.zip
           ls -al
           ./roblox-studio-cli.exe auth set .ROBLOSECURITY "${{ secrets.ROBLOSECURITY }}"
           ./roblox-studio-cli.exe auth set oauth2RefreshToken "${{ secrets.ROBLOX_REFRESH_TOKEN }}"
