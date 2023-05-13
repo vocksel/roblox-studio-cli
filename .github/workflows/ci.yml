@@ -84,7 +84,10 @@ jobs:
 
       - name: Unzip binary
         shell: bash
-        run: 7z x release.zip
+        run: |
+          ls -al
+          7z x release.zip
+        working-directory: roblox-studio-cli
 
       - name: Set auth credentials
         shell: bash
