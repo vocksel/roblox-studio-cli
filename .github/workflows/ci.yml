@@ -110,13 +110,6 @@ jobs:
       #   run: roblox-studio-cli install
       #   working-directory: roblox-studio-cli
 
-      - name: Set ROBLOX_STUDIO_PATH for run-in-roblox
-        shell: bash
-        run: |
-          path="$(pwd)/.github/workflows/RobloxStudioLauncherBeta.exe"
-          echo "ROBLOX_STUDIO_PATH=$path" >> $GITHUB_ENV
-
-
       - uses: Roblox/setup-foreman@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
