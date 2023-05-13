@@ -87,6 +87,7 @@ jobs:
         run: |
           ls -al
           7z x release.zip
+          ls -al
         working-directory: roblox-studio-cli
 
       - name: Set auth credentials
