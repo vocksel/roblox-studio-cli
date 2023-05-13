@@ -82,14 +82,16 @@ jobs:
           name: roblox-studio-cli-windows-x86_64
           path: roblox-studio-cli
 
+      - name: Unzip binary
+        shell: bash
+        run: 7z x release.zip
+
       - name: Set auth credentials
         shell: bash
         run: |
-          7z x release.zip
-          ls -al
-          ./roblox-studio-cli.exe auth set .ROBLOSECURITY "${{ secrets.ROBLOSECURITY }}"
-          ./roblox-studio-cli.exe auth set oauth2RefreshToken "${{ secrets.ROBLOX_REFRESH_TOKEN }}"
-          ./roblox-studio-cli.exe auth set userid "${{ secrets.ROBLOX_USER_ID }}"
+          roblox-studio-cli.exe auth set .ROBLOSECURITY "${{ secrets.ROBLOSECURITY }}"
+          roblox-studio-cli.exe auth set oauth2RefreshToken "${{ secrets.ROBLOX_REFRESH_TOKEN }}"
+          roblox-studio-cli.exe auth set userid "${{ secrets.ROBLOX_USER_ID }}"
         working-directory: roblox-studio-cli
 
       - uses: Roblox/setup-foreman@v1
