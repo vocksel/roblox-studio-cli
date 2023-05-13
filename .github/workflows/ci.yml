@@ -102,7 +102,7 @@ jobs:
         shell: bash
         run: |
           pip install --requirement requirements.txt;
-          python install.py
+          python3 install.py
         working-directory: .github/workflows
 
       # - name: Install Roblox Studio
