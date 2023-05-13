@@ -53,8 +53,8 @@ jobs:
         with:
           name: ${{ matrix.artifact-name }}
           path: |
-            target/release/roblox-studio-cli
-            target/release/roblox-studio-cli.exe
+            **/roblox-studio-cli
+            **/roblox-studio-cli.exe
 
   tests:
     needs: ['build']
