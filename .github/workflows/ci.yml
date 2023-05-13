@@ -82,6 +82,15 @@ jobs:
           name: roblox-studio-cli-windows-x86_64
           path: roblox-studio-cli
 
+      - name: Set auth credentials
+        shell: bash
+        run: |
+          ls -al
+          ./roblox-studio-cli.exe auth set .ROBLOSECURITY "${{ secrets.ROBLOSECURITY }}"
+          ./roblox-studio-cli.exe auth set oauth2RefreshToken "${{ secrets.ROBLOX_REFRESH_TOKEN }}"
+          ./roblox-studio-cli.exe auth set userid "${{ secrets.ROBLOX_USER_ID }}"
+        working-directory: roblox-studio-cli
+
       - uses: Roblox/setup-foreman@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -114,14 +123,7 @@ jobs:
       #   run: roblox-studio-cli install
       #   working-directory: roblox-studio-cli
 
-      - name: Set auth credentials
-        shell: bash
-        run: |
-          ls -al
-          ./roblox-studio-cli.exe auth set .ROBLOSECURITY "${{ secrets.ROBLOSECURITY }}"
-          ./roblox-studio-cli.exe auth set oauth2RefreshToken "${{ secrets.ROBLOX_REFRESH_TOKEN }}"
-          ./roblox-studio-cli.exe auth set userid "${{ secrets.ROBLOX_USER_ID }}"
-        working-directory: roblox-studio-cli
+
 
       - name: Run tests
         run: run-in-roblox --place studio-tests.rbxl --script tests/init.server.lua
