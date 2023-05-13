@@ -98,6 +98,18 @@ jobs:
           ./roblox-studio-cli.exe auth set userid "${{ secrets.ROBLOX_USER_ID }}"
         working-directory: roblox-studio-cli
 
+      - name: Install Roblox Studio
+        shell: bash
+        run: |
+          pip install --requirement requirements.txt;
+          python install.py
+        working-directory: .github/workflows
+
+      # - name: Install Roblox Studio
+      #   shell: bash
+      #   run: roblox-studio-cli install
+      #   working-directory: roblox-studio-cli
+
       - uses: Roblox/setup-foreman@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -116,18 +128,6 @@ jobs:
         shell: bash
         run: rojo build dev.project.json -o studio-tests.rbxl
         working-directory: example
-
-      - name: Install Roblox Studio
-        shell: bash
-        run: |
-          pip install --requirement requirements.txt;
-          python install.py
-        working-directory: .github/workflows
-
-      # - name: Install Roblox Studio
-      #   shell: bash
-      #   run: roblox-studio-cli install
-      #   working-directory: roblox-studio-cli
 
       - name: Run tests
         run: run-in-roblox --place studio-tests.rbxl --script tests/init.server.lua
