@@ -96,6 +96,7 @@ jobs:
           ./roblox-studio-cli.exe auth set .ROBLOSECURITY "${{ secrets.ROBLOSECURITY }}"
           ./roblox-studio-cli.exe auth set oauth2RefreshToken "${{ secrets.ROBLOX_REFRESH_TOKEN }}"
           ./roblox-studio-cli.exe auth set userid "${{ secrets.ROBLOX_USER_ID }}"
+          ./roblox-studio-cli.exe auth set Cookies ".ROBLOSECURITY;oauth2RefreshToken;"
         working-directory: roblox-studio-cli
 
       - name: Install Mullvad
