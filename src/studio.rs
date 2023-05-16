@@ -48,43 +48,11 @@ pub fn get_auth_credential() {
 }
 
 #[cfg(target_os = "windows")]
-pub fn set_auth_credential(token_name: &str, token_value: &str) -> Result<bool, Error> {
-    let mut target = wstr(&format!("{}{}", STUDIO_AUTH_URL, token_name));
-    let blob = token_value.to_owned().as_mut_ptr();
+pub fn set_auth_credential(token_name: &str, token_value: &str) -> Result<(), keyring::Error> {
+    let target = &format!("{}{}", STUDIO_AUTH_URL, token_name);
+    let entry = keyring::Entry::new_with_target(target, "", "")?;
 
-    unsafe {
-        let mut credential = wincred::CREDENTIALW {
-            Flags: 0,
-            Type: 0,
-            TargetName: target.as_mut_ptr(),
-            Comment: std::ptr::null_mut(),
-            LastWritten: minwindef::FILETIME {
-                dwLowDateTime: 0,
-                dwHighDateTime: 0,
-            },
-            CredentialBlobSize: 0,
-            CredentialBlob: blob,
-            Persist: wincred::CRED_TYPE_DOMAIN_PASSWORD,
-            AttributeCount: 0,
-            Attributes: &mut wincred::CREDENTIAL_ATTRIBUTEW {
-                Flags: 0,
-                Keyword: std::ptr::null_mut(),
-                Value: std::ptr::null_mut(),
-                ValueSize: 0,
-            },
-            TargetAlias: std::ptr::null_mut(),
-            UserName: std::ptr::null_mut(),
-        };
-
-        let credential_ptr = std::ptr::addr_of_mut!(credential);
-
-        if wincred::CredWriteW(credential_ptr, 0) != minwindef::TRUE {
-            return Err(format!("failed to set token: {}", std::io::Error::last_os_error()).into());
-        } else {
-            println!("hopefully stored the credential?");
-            return Ok(true);
-        }
-    }
+    entry.set_password(token_value)
 }
 
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]

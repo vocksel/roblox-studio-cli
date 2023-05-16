@@ -49,12 +49,10 @@ jobs:
         env:
           CARGO_TARGET_DIR: output
 
-      - name: Setup Archive + Extension
+      - name: Setup archive + extension
         shell: bash
         run: |
           mkdir -p staging
-
-          ls -al output
 
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             cp "output/${{ matrix.cargo-target }}/release/roblox-studio-cli.exe" staging/
@@ -71,13 +69,107 @@ jobs:
           name: ${{ matrix.artifact-name }}
           path: release.zip
 
-
   tests:
     needs: ['build']
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
+
+      - name: Download roblox-studio-cli
+        uses: actions/download-artifact@v3
+        with:
+          name: roblox-studio-cli-windows-x86_64
+          path: roblox-studio-cli
+
+      - name: Unzip binary
+        shell: bash
+        run: |
+          ls -al
+          7z x release.zip
+          ls -al
+        working-directory: roblox-studio-cli
+
+      - name: Set auth credentials
+        shell: bash
+        run: |
+          ./roblox-studio-cli.exe auth set .ROBLOSECURITY "${{ secrets.ROBLOSECURITY }}"
+          ./roblox-studio-cli.exe auth set accessToken "${{ secrets.ROBLOX_ACCESS_TOKEN }}"
+          ./roblox-studio-cli.exe auth set userid "${{ secrets.ROBLOX_USER_ID }}"
+          ./roblox-studio-cli.exe auth set Cookies ".ROBLOSECURITY;"
+        working-directory: roblox-studio-cli
+
+      - name: Install Mullvad
+        run: choco install mullvad-app
+
+      - name: Update path with Mullvad executable
+        shell: bash
+        run: |
+          BIN="/c/Program Files/Mullvad VPN/resources"
+          echo "$BIN" >> $GITHUB_PATH
+
+      - name: Login to Mullvad account
+        shell: bash
+        run: mullvad account login ${{ secrets.MULLVAD_ACCOUNT }}
+
+      - name: Set server to connect to
+        shell: bash
+        run: mullvad relay set hostname us-sjc-wg-001
+
+      - name: Export IP before connecting to VPN
+        shell: bash
+        run: |
+          ip=$(curl -s https://httpbin.org/ip | jq -r .origin)
+          echo "Current IP address: $ip"
+          echo "RUNNER_IP=$ip" >> $GITHUB_ENV
+
+      - name: Connect to VPN
+        shell: bash
+        run: mullvad connect
+
+      - name: Export device name
+        shell: bash
+        run: |
+          deviceName=$(mullvad account get | grep  "Device name" | cut -d : -f 2 | xargs)
+          echo "Device name: $deviceName"
+          echo "DEVICE_NAME=$deviceName" >> $GITHUB_ENV
+
+      - name: Poll for IP change
+        uses: nick-fields/retry@v2.8.3
+        with:
+          max_attempts: 5
+          timeout_minutes: 2
+          retry_wait_seconds: 2
+          shell: bash
+          command: |
+            ip=$(curl -s https://httpbin.org/ip | jq -r .origin)
+
+            echo "Original IP: ${{ env.RUNNER_IP }}"
+            echo "Current IP: $ip"
+
+            if [[ $ip != "" && "${{ env.RUNNER_IP }}" != "$ip" ]]; then
+              echo "IP changed, assuming we're connected now to the VPN"
+              exit 0
+            else
+              echo "IP has not changed yet. Retrying...."
+              exit 1
+            fi
+
+      - name: Log Mullvad status
+        shell: bash
+        run: mullvad status -v
+
+      - name: Install Roblox Studio
+        shell: bash
+        run: |
+          pip install --requirement requirements.txt;
+          python3 install.py
+        working-directory: .github/workflows
+
+      # - name: Install Roblox Studio
+      #   shell: bash
+      #   run: roblox-studio-cli install
+      #   working-directory: roblox-studio-cli
 
       - uses: Roblox/setup-foreman@v1
         with:
@@ -88,33 +180,30 @@ jobs:
           repository: vocksel/flipbook
           path: example
 
-      - name: Navigate into the example project
-        shell: bash
-        run: cd example
-
       - name: Install dependencies
         shell: bash
         run: wally install
+        working-directory: example
 
       - name: Build place file
         shell: bash
         run: rojo build dev.project.json -o studio-tests.rbxl
-
-      - name: Download roblox-studio-cli
-        uses: actions/download-artifact@v3
-        with:
-          name: roblox-studio-cli-windows-x86_64
-          path: roblox-studio-cli
-
-      - name: Install Roblox Studio
-        shell: bash
-        run: roblox-studio-cli install
-        working-directory: roblox-studio-cli
-
-      - name: Set auth token
-        shell: bash
-        run: roblox-studio-cli auth-token set ${{ secrets.ROBLOSECURITY }}
-        working-directory: roblox-studio-cli
+        working-directory: example
 
       - name: Run tests
         run: run-in-roblox --place studio-tests.rbxl --script tests/init.server.lua
+        working-directory: example
+
+      - name: Disconnect from VPN
+        if: always()
+        shell: bash
+        run: |
+          mullvad disconnect
+          mullvad account revoke-device "${{ env.DEVICE_NAME }}"
+
+      - name: Screenshot
+        if: failure()
+        uses: OrbitalOwen/desktop-screenshot-action@0.1
+        with:
+          file-name: 'roblox-studio-${{ github.run_id }}.jpg'
+
